@@ -1,0 +1,43 @@
+name: Update Hex
+
+on:
+  schedule:
+    - cron: "23 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: cachix/install-nix-action@v31
+
+      - name: Update version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: nix run .#update
+
+      - name: Build package
+        run: nix build .#hex --print-build-logs
+
+      - name: Verify signature
+        run: bash scripts/verify-signature.sh result/Applications/Hex.app
+
+      - name: Run CLI
+        run: ./result/bin/hex --version
+
+      - name: Commit and push changes
+        run: |
+          if git diff --exit-code version.json; then
+            echo "No changes to commit."
+          else
+            git config --local user.email "github-actions[bot]@users.noreply.github.com"
+            git config --local user.name "github-actions[bot]"
+            git add version.json
+            git commit -m "Update Hex to $(jq -r .version version.json)"
+            git push
+          fi
