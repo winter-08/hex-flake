@@ -28,5 +28,5 @@ jobs:
           HEX_APPLICATION_SUPPORT_DIR=$(mktemp -d)
           export HEX_APPLICATION_SUPPORT_DIR
           ./result/bin/hex settings apply tests/settings.json
-          cat "$HEX_APPLICATION_SUPPORT_DIR/settings.json"
-          ./result/bin/hex settings list | grep -E 'hotkey'
+          jq --exit-status '.dictation_hotkey.keys[1].label == "Space"' \
+            "$HEX_APPLICATION_SUPPORT_DIR/settings.json"
