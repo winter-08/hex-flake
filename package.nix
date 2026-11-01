@@ -6,14 +6,14 @@
   unzip,
 }:
 let
-  inherit (lib.importJSON ./version.json) version hash;
+  inherit (lib.importJSON ./version.json) version asset hash;
 in
 stdenvNoCC.mkDerivation {
   pname = "hex";
   inherit version;
 
   src = fetchurl {
-    url = "https://github.com/anomalyco/hex/releases/download/v${version}/Hex-${version}-macos-arm64.zip";
+    url = "https://github.com/anomalyco/hex/releases/download/v${version}/${asset}";
     inherit hash;
   };
 
