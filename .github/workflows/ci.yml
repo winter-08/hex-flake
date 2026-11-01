@@ -22,3 +22,11 @@ jobs:
 
       - name: Run CLI
         run: ./result/bin/hex --version
+
+      - name: Apply settings
+        run: |
+          HEX_APPLICATION_SUPPORT_DIR=$(mktemp -d)
+          export HEX_APPLICATION_SUPPORT_DIR
+          ./result/bin/hex settings apply tests/settings.json
+          cat "$HEX_APPLICATION_SUPPORT_DIR/settings.json"
+          ./result/bin/hex settings list | grep -E 'hotkey'

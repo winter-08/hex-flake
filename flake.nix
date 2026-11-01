@@ -29,11 +29,18 @@
       };
 
       darwinModules.hex =
-        { config, lib, ... }:
+        {
+          config,
+          lib,
+          pkgs,
+          ...
+        }:
         let
           cfg = config.programs.hex;
+          json = pkgs.formats.json { };
 
           inherit (lib.lists) singleton;
+          inherit (lib.meta) getExe;
           inherit (lib.modules) mkIf;
           inherit (lib.options) mkEnableOption mkOption;
           inherit (lib.types) package;
@@ -47,6 +54,21 @@
               default = self.packages.aarch64-darwin.hex;
               description = "Hex package to install.";
             };
+
+            autostart = mkEnableOption "starting Hex at login";
+
+            settings = mkOption {
+              type = json.type;
+              default = { };
+              example = {
+                dictation_hotkey = "option+space";
+                shortcut_mode = "toggle";
+              };
+              description = ''
+                Settings merged into Hex on activation, keyed as `hex settings list`
+                prints them. Keys left out keep the value set in the app.
+              '';
+            };
           };
 
           config = mkIf cfg.enable {
@@ -54,6 +76,22 @@
 
             # The store is read-only, so updates come from this flake.
             system.defaults.CustomUserPreferences."anomaly.hex".DisableUpdates = true;
+
+            # Hex's own login item would pin a store path that changes per version.
+            launchd.user.agents.hex.serviceConfig = mkIf cfg.autostart {
+              ProgramArguments = [
+                "${cfg.package}/Applications/Hex.app/Contents/MacOS/hex"
+                "start"
+              ];
+              RunAtLoad = true;
+            };
+
+            system.activationScripts.postActivation.text = mkIf (cfg.settings != { }) /* bash */ ''
+              if ! /usr/bin/sudo --user=${config.system.primaryUser} --set-home \
+                ${getExe cfg.package} settings apply ${json.generate "hex-settings.json" cfg.settings}; then
+                echo "warning: Hex didn't apply programs.hex.settings" >&2
+              fi
+            '';
           };
         };
       darwinModules.default = self.darwinModules.hex;

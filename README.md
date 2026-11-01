@@ -22,13 +22,21 @@ Then import the nix-darwin module and enable it:
 {
   imports = [ inputs.hex.darwinModules.hex ];
 
-  programs.hex.enable = true;
+  programs.hex = {
+    enable = true;
+    autostart = true;
+    settings.dictation_hotkey = "option+space";
+  };
 }
 ```
 
 The module installs the app and CLI and sets `DisableUpdates`, because Hex can't
 replace itself in the read-only store. It needs `system.primaryUser` set. Launch
 Hex once to grant Microphone and Accessibility access and download a model.
+
+`settings` matches upstream's Home Manager option: activation runs
+`hex settings apply` with the keys `hex settings list` prints. Declared keys
+overwrite Hex's values, and anything undeclared keeps its value from the app.
 
 ## Permissions
 
